@@ -631,7 +631,13 @@ NodeId_encodeBinaryWithEncodingMask(UA_NodeId const *src, u8 encoding, Ctx *ctx)
         encoding |= UA_NODEIDTYPE_GUID;
         ret |= ENCODE_DIRECT(&encoding, Byte);
         ret |= ENCODE_DIRECT(&src->namespaceIndex, UInt16);
-        ret |= ENCODE_DIRECT(&src->identifier.guid, Guid);
+        if(src->identifier.guid) {
+            ret |= ENCODE_DIRECT(src->identifier.guid, Guid);
+        } else {
+            UA_Guid gid;
+            memset(&gid, 0, sizeof(UA_Guid));
+            ret |= ENCODE_DIRECT(&gid, Guid);
+        }
         break;
     case UA_NODEIDTYPE_BYTESTRING:
         encoding |= UA_NODEIDTYPE_BYTESTRING;
@@ -690,9 +696,12 @@ DECODE_BINARY(NodeId) {
         ret |= DECODE_DIRECT(&dst->identifier.string, String);
         break;
     case UA_NODEIDTYPE_GUID:
+        dst->identifier.guid = (UA_Guid*)UA_malloc(sizeof(UA_Guid));
+        if(!dst->identifier.guid)
+            return UA_STATUSCODE_BADOUTOFMEMORY;
         dst->identifierType = UA_NODEIDTYPE_GUID;
         ret |= DECODE_DIRECT(&dst->namespaceIndex, UInt16);
-        ret |= DECODE_DIRECT(&dst->identifier.guid, Guid);
+        ret |= DECODE_DIRECT(dst->identifier.guid, Guid);
         break;
     case UA_NODEIDTYPE_BYTESTRING:
         dst->identifierType = UA_NODEIDTYPE_BYTESTRING;

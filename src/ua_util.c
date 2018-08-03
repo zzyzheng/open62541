@@ -125,13 +125,10 @@ UA_StatusCode UA_ByteString_toBase64String(const UA_ByteString *byteString, UA_S
 
 UA_StatusCode
 UA_NodeId_toString(const UA_NodeId *nodeId, UA_String *nodeIdStr) {
-    if (nodeIdStr->length != 0) {
-        UA_free(nodeIdStr->data);
-        nodeIdStr->data = NULL;
-        nodeIdStr->length = 0;
-    }
-    if (nodeId == NULL)
-        return UA_STATUSCODE_GOOD;
+    if(!nodeId)
+        return UA_STATUSCODE_BADINTERNALERROR;
+    if(nodeIdStr->length != 0)
+        UA_String_deleteMembers(nodeIdStr);
 
     char *nsStr = NULL;
     size_t nsLen = 0;
@@ -176,9 +173,12 @@ UA_NodeId_toString(const UA_NodeId *nodeId, UA_String *nodeIdStr) {
                 UA_free(nsStr);
                 return UA_STATUSCODE_BADOUTOFMEMORY;
             }
+            UA_Guid g;
+            memset(&g, 0, sizeof(UA_Guid));
+            if(nodeId->identifier.guid)
+                g = *nodeId->identifier.guid;
             UA_snprintf((char*)nodeIdStr->data, nodeIdStr->length, "%sg=" UA_PRINTF_GUID_FORMAT,
-                        nsLen > 0 ? nsStr : "",
-                        UA_PRINTF_GUID_DATA(nodeId->identifier.guid));
+                        nsLen > 0 ? nsStr : "", UA_PRINTF_GUID_DATA(g));
             break;
         case UA_NODEIDTYPE_BYTESTRING:
             UA_ByteString_toBase64String(&nodeId->identifier.byteString, &byteStr);

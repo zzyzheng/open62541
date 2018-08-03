@@ -504,7 +504,7 @@ processMSG(UA_Server *server, UA_SecureChannel *channel,
         }
 
         UA_Session_init(&anonymousSession);
-        anonymousSession.sessionId = UA_NODEID_GUID(0, UA_GUID_NULL);
+        anonymousSession.sessionId.identifierType = UA_NODEIDTYPE_GUID;
         anonymousSession.header.channel = channel;
         session = &anonymousSession;
     }

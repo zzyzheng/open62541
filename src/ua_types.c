@@ -227,6 +227,10 @@ NodeId_deleteMembers(UA_NodeId *p, const UA_DataType *_) {
     case UA_NODEIDTYPE_BYTESTRING:
         String_deleteMembers(&p->identifier.string, NULL);
         break;
+    case UA_NODEIDTYPE_GUID:
+        if(p->identifier.guid)
+            UA_free(p->identifier.guid);
+        break;
     default: break;
     }
 }
@@ -239,15 +243,22 @@ NodeId_copy(UA_NodeId const *src, UA_NodeId *dst, const UA_DataType *_) {
         *dst = *src;
         return UA_STATUSCODE_GOOD;
     case UA_NODEIDTYPE_STRING:
-        retval |= UA_String_copy(&src->identifier.string,
-                                 &dst->identifier.string);
+        retval = UA_String_copy(&src->identifier.string,
+                                &dst->identifier.string);
         break;
     case UA_NODEIDTYPE_GUID:
-        retval |= UA_Guid_copy(&src->identifier.guid, &dst->identifier.guid);
+        if(!src->identifier.guid) {
+            dst->identifier.guid = NULL;
+        } else {
+            dst->identifier.guid = (UA_Guid*)UA_malloc(sizeof(UA_Guid));
+            if(!dst->identifier.guid)
+                return UA_STATUSCODE_BADOUTOFMEMORY;
+            *dst->identifier.guid = *src->identifier.guid;
+        }
         break;
     case UA_NODEIDTYPE_BYTESTRING:
-        retval |= UA_ByteString_copy(&src->identifier.byteString,
-                                     &dst->identifier.byteString);
+        retval = UA_ByteString_copy(&src->identifier.byteString,
+                                    &dst->identifier.byteString);
         break;
     default:
         return UA_STATUSCODE_BADINTERNALERROR;
@@ -277,9 +288,22 @@ UA_NodeId_equal(const UA_NodeId *n1, const UA_NodeId *n2) {
     case UA_NODEIDTYPE_STRING:
         return UA_String_equal(&n1->identifier.string,
                                &n2->identifier.string);
-    case UA_NODEIDTYPE_GUID:
-        return UA_Guid_equal(&n1->identifier.guid,
-                             &n2->identifier.guid);
+    case UA_NODEIDTYPE_GUID: {
+        UA_Guid g1, g2, *gp1, *gp2;
+        if(n1->identifier.guid) {
+            gp1 = n1->identifier.guid;
+        } else {
+            memset(&g1, 0, sizeof(UA_Guid));
+            gp1 = &g1;
+        }
+        if(n2->identifier.guid) {
+            gp2 = n2->identifier.guid;
+        } else {
+            memset(&g2, 0, sizeof(UA_Guid));
+            gp2 = &g2;
+        }
+        return UA_Guid_equal(gp1, gp2);
+    }
     case UA_NODEIDTYPE_BYTESTRING:
         return UA_ByteString_equal(&n1->identifier.byteString,
                                    &n2->identifier.byteString);

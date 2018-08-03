@@ -150,11 +150,16 @@ Service_CreateSession(UA_Server *server, UA_SecureChannel *channel,
                                        &newSession->clientDescription);
 
     /* Prepare the response */
-    response->sessionId = newSession->sessionId;
+    response->responseHeader.serviceResult |=
+        UA_NodeId_copy(&newSession->sessionId,
+                       &response->sessionId);
     response->revisedSessionTimeout = (UA_Double)newSession->timeout;
-    response->authenticationToken = newSession->header.authenticationToken;
-    response->responseHeader.serviceResult =
-        UA_String_copy(&request->sessionName, &newSession->sessionName);
+    response->responseHeader.serviceResult |=
+        UA_NodeId_copy(&newSession->header.authenticationToken,
+                       &response->authenticationToken);
+    response->responseHeader.serviceResult |=
+        UA_String_copy(&request->sessionName,
+                       &newSession->sessionName);
 
     if(server->config.endpointsSize > 0)
         response->responseHeader.serviceResult |=
@@ -179,7 +184,7 @@ Service_CreateSession(UA_Server *server, UA_SecureChannel *channel,
 
     UA_LOG_DEBUG_CHANNEL(server->config.logger, channel,
                          "Session " UA_PRINTF_GUID_FORMAT " created",
-                         UA_PRINTF_GUID_DATA(newSession->sessionId.identifier.guid));
+                         UA_PRINTF_GUID_DATA(*newSession->sessionId.identifier.guid));
 }
 
 static UA_StatusCode

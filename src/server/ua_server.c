@@ -284,7 +284,8 @@ UA_Server_new(const UA_ServerConfig *config) {
     /* Initialize the adminSession */
     UA_Session_init(&server->adminSession);
     server->adminSession.sessionId.identifierType = UA_NODEIDTYPE_GUID;
-    server->adminSession.sessionId.identifier.guid.data1 = 1;
+    server->adminSession.sessionId.identifier.guid = UA_Guid_new();
+    server->adminSession.sessionId.identifier.guid->data1 = 1;
     server->adminSession.validTill = UA_INT64_MAX;
 
     /* Create Namespaces 0 and 1 */

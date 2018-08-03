@@ -310,9 +310,10 @@ typedef struct {
     UA_UInt16 namespaceIndex;
     enum UA_NodeIdType identifierType;
     union {
-        UA_UInt32     numeric;
-        UA_String     string;
-        UA_Guid       guid;
+        UA_UInt32 numeric;
+        UA_String string;
+        UA_Guid *guid; /* If the pointer is NULL, then an all-zero Guid is
+                        * assumed */
         UA_ByteString byteString;
     } identifier;
 } UA_NodeId;
@@ -352,7 +353,10 @@ static UA_INLINE UA_NodeId
 UA_NODEID_GUID(UA_UInt16 nsIndex, UA_Guid guid) {
     UA_NodeId id; id.namespaceIndex = nsIndex;
     id.identifierType = UA_NODEIDTYPE_GUID;
-    id.identifier.guid = guid; return id;
+    id.identifier.guid = (UA_Guid*)UA_malloc(sizeof(UA_Guid));
+    if(id.identifier.guid)
+        *id.identifier.guid = guid;
+    return id;
 }
 
 static UA_INLINE UA_NodeId
